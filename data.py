@@ -21,8 +21,8 @@ def create_data():
 
     total = len(images_mask_list)
 
-    imgs = np.ndarray((total, image_rows, image_cols, 1)) #(18, 256, 256, 1)  # por defecto son float
-    imgs_mask = np.ndarray((total, image_rows, image_cols, 2)) #(18, 256, 256, 2)
+    imgs = np.ndarray((total, image_rows, image_cols, 1)) #(11, 256, 256, 1)  # por defecto son float
+    imgs_mask = np.ndarray((total, image_rows, image_cols, 2)) #(11, 256, 256, 2)
 
     i = 0
     print('-'*30)
@@ -34,46 +34,24 @@ def create_data():
         for image_name_data in images_data_list:
             if id_mask in image_name_data: # Compruebo que id_mask coincide con id_imagen.
                 # as_gray: True convierte las imagenes en color a escala de grises (flotantes de 64 bits). Las imagenes que ya estan en formato de escala de grises no se convierten.
-                # as_gray creo no afecta.
                 img = imread(os.path.join(data_path, image_name_data), as_gray=True) #(832, 992), uint16, max:54528, min:3584
                 
-                hist, hist_centers = exposure.histogram(img, nbins='auto')
-                fig, ax = plt.subplots(ncols=2, figsize=(10, 5))
-                ax[0].imshow(img, interpolation='nearest', cmap=plt.cm.gray)
-                ax[0].axis('off')
-                ax[1].plot(hist_centers, hist, lw="2")
-                ax[1].set_title('Histogram of img read')
-                plt.tight_layout()
-                plt.show()
-                print('Max de la img recien leida: {0}.'.format(np.max(img)))
-                print('Min de la img recien leida: {0}.\n'.format(np.min(img)))
+                #hist, hist_centers = exposure.histogram(img, nbins='auto')
+                #fig, ax = plt.subplots(ncols=2, figsize=(10, 5))
+                #ax[0].imshow(img, interpolation='nearest', cmap=plt.cm.gray)
+                #ax[0].axis('off')
+                #ax[1].plot(hist_centers, hist, lw="2")
+                #ax[1].set_title('Histogram of img read')
+                #plt.tight_layout()
+                #plt.show()
+                #print('Max de la img recien leida: {0}.'.format(np.max(img)))
+                #print('Min de la img recien leida: {0}.\n'.format(np.min(img)))
+
 
                 #preserve_range: mantener el rango de valores original
                 img = resize(img, (image_rows, image_cols), preserve_range=True) #(256, 256), float64, max:45412.0, min:4534.0
-                hist, hist_centers = exposure.histogram(img, nbins='auto')
-                fig, ax = plt.subplots(ncols=2, figsize=(10, 5))
-                ax[0].imshow(img, interpolation='nearest', cmap=plt.cm.gray)
-                ax[0].axis('off')
-                ax[1].plot(hist_centers, hist, lw="2")
-                ax[1].set_title('Histogram of img resize')
-                plt.tight_layout()
-                plt.show()
-
-                #print('Max de la img resize preserve range: {0}.'.format(np.max(img)))
-                #print('Min de la img resize preserve range: {0}.\n'.format(np.min(img)))
-
                 img = np.reshape(img, (image_rows, image_cols, 1)) #(256, 256, 1), float64, max:45412.0, min:4534.0
-                
-                hist, hist_centers = exposure.histogram(img[:,:,0], nbins='auto')
-                fig, ax = plt.subplots(ncols=2, figsize=(10, 5))
-                ax[0].imshow(img[:,:,0], interpolation='nearest', cmap=plt.cm.gray)
-                ax[0].axis('off')
-                ax[1].plot(hist_centers, hist, lw="2")
-                ax[1].set_title('Histogram of img reshape')
-                plt.tight_layout()
-                plt.show()
-                #print('Max de la img reshape final: {0}.'.format(np.max(img)))
-                #print('Min de la img reshape final: {0}.\n'.format(np.min(img)))
+            
 
                 # ------------------- Analizo las mask ---------------------
 
@@ -217,13 +195,21 @@ def create_data():
 
                 imgs[i] = img
                 imgs_mask[i] = categorical_labels
-                quit()
                 break # Para que siga con la siquiente mask
                 
         i += 1
 
-    #----PREPROCESSING DATA----
-    # Las dejo con media 0 y desviacion tipica 1 (distribucion normal), para que los datos esten centrados en 0, igual que la funcion softmax
+
+    hist, hist_centers = exposure.histogram(imgs[3][:,:,0], nbins='auto')
+    fig, ax = plt.subplots(ncols=2, figsize=(10, 5))
+    ax[0].imshow(imgs[3][:,:,0], interpolation='nearest', cmap=plt.cm.gray)
+    ax[0].axis('off')
+    ax[1].plot(hist_centers, hist, lw="2")
+    ax[1].set_title('Histogram before normalization, image 3')
+    plt.tight_layout()
+    plt.show()
+    
+    # Normalization
     mean = np.mean(imgs) # Devuelve el promedio de los elementos de la matriz.
     std = np.std(imgs) # Devuelve la desviacion tipica, una medida de la extension de una distribucion, de los elementos de la matriz.
     imgs -= mean
@@ -231,32 +217,19 @@ def create_data():
     print('mean imgs: {0}.'.format(np.mean(imgs)))
     print('desv tipica imgs: {0}.'.format(np.std(imgs)))
 
-
-
+    hist, hist_centers = exposure.histogram(imgs[3][:,:,0], nbins='auto')
+    fig, ax = plt.subplots(ncols=2, figsize=(10, 5))
+    ax[0].imshow(imgs[3][:,:,0], interpolation='nearest', cmap=plt.cm.gray)
+    ax[0].axis('off')
+    ax[1].plot(hist_centers, hist, lw="2")
+    ax[1].set_title('Histogram after normalization, image 3')
+    plt.tight_layout()
+    plt.show()
+    
     print('Loading done.')
     np.save('imgs.npy', imgs) # type imgs: float64
     np.save('imgs_mask.npy', imgs_mask) # type imgs_mask float64
     print('Saving to .npy files done.')
-
-
-    # -----------------------------------------
-    # Guardo el resultado de las imagenes preprocesadas  --- ATENCION se guardan como imagens de 8 bits ---
-    #print('-' * 30)
-    #print('Saving preprocessing images to files...')
-    #print('-' * 30)
-    #preproc_dir = 'preprocessing'
-    #if not os.path.exists(preproc_dir):
-    #    os.mkdir(preproc_dir)
-    #id = 1
-    #for image in imgs:
-    #    # print(np.dtype(np.amax(image))) # float64
-    #    image = (image[:, :, 0] * 255.).astype(np.float)
-    #    id = id + 1
-    #    imsave(os.path.join(preproc_dir, str(id) + '_preprocess.png'), image)
-
-    # !! ValueError: Images of type float must be between -1 and 1.
-# -----------------------------------------
-
 
 def load_data():
     imgs = np.load('imgs.npy')
