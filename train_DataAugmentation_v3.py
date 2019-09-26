@@ -1,4 +1,13 @@
 from __future__ import print_function
+
+#
+#
+# https://academic.oup.com/bioinformatics/article/30/11/1609/283435
+# https://www.nature.com/articles/nmeth.4473
+#
+#
+
+
 import os
 import itertools
 
