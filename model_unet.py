@@ -1,17 +1,30 @@
+#
+# Celia García Fernández
+#
 from keras.models import Model
 from keras.layers import Input, concatenate, Conv2D, MaxPooling2D, Conv2DTranspose
 from keras.optimizers import Adam
 from keras import backend as K
+from tensorflow import keras
+from keras.utils import plot_model
+
+from skimage.io import imsave
+import os
+from datetime import datetime
+
+
 
 image_rows = 256
 image_cols = 256
 smooth = 1.
 
 # Se le pasa el mask que ha creado el modelo, y el mask original, para ver como de bueno es el resultado
+# El coef  iciente dice compara dos planos, por eso cojo la segunda capa de los mask (capa celula)
+
 def dice_coef(y_true, y_pred):
-    # El coeficiente dice compara dos planos, por eso cojo la segunda capa de los mask (capa celula)
     y_true = y_true[:,:,:,1]
     y_pred = y_pred[:,:,:,1]
+
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)
@@ -69,6 +82,9 @@ def get_unet():
     model = Model(inputs=[inputs], outputs=[conv10])
 
 
+    #model.summary()
+
+    #keras.utils.plot_model(model, "my_first_model.png", show_shapes=True)
     # LOSS: La variable loss guarda el nodo que calcula el error de la red. Se compara la salida de la red, con la salida deseada con la cross entropy media.
     # categorical_crossentropy, por eso utilizo anteriormente to_categorical.
 
@@ -78,7 +94,8 @@ def get_unet():
 
     # METRICS: Lista de metricas que evaluara el modelo durante la capacitacion y las pruebas. 
     # Dice Coef evalua cuanto se parece la mask que se ha predicho con la mask real.
-    model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=[dice_coef])
+    
+    model.compile(optimizer='Adam',loss='categorical_crossentropy',metrics=[dice_coef])
 
     return model
 
